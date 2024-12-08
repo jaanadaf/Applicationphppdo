@@ -13,22 +13,38 @@ try {
   
 
     //recherche des utilisateurs
-    $search = 'D\'\'%';
+    $search = '%.com';
 
       // Requête SQL avec jointure
 
-      $sql = 'SELECT users.name, users.email FROM users WHERE name LIKE \'' . $search . '\'';
-      echo $sql;
-      
+      $sql = 'SELECT users.name, users.email FROM users WHERE email LIKE :search';
+      $pdoStatement=$pdo->prepare($sql);
+      $pdoStatement->bindValue(':search', $search, PDO::PARAM_STR);
+      if($pdoStatement->execute()){
 
+        // Requete OK 
+
+       while($user = $pdoStatement->fetch(PDO::FETCH_ASSOC)) {
+
+        echo $user['name'].' '.$user['email'].'<br>';
+    }
+
+       
+      }else{
+        // Erreur
+        echo 'Une erreur est survenue';
+      }
+
+      /*echo $sql;
+    
     // Initialisation de l'objet PDO, construction de la requête...
     foreach ($pdo->query( $sql,  PDO::FETCH_ASSOC) as $user) {
         echo $user['name'].' '.$user['email'].'<br>';
-    }
+    }*/
     // Ici, la variable $row est un tableau associatif
 
 
 } catch (PDOException $e) {
-    die("Erreur de connexion : " . $e->getMessage());
+    echo 'Impossible de se connecter à la base de données';
 }
 
