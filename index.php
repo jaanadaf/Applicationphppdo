@@ -1,4 +1,5 @@
 <?php
+
 // Paramètres de connexion
 $host = 'localhost';
 $dbname = 'phppdo';
@@ -9,13 +10,20 @@ try {
     // Création de l'objet PDO
     $pdo = new PDO('mysql:host=localhost;dbname=phppdo', 'root', '');
 
+  
+
+    //recherche des utilisateurs
+    $search = 'D\'\'%';
+
       // Requête SQL avec jointure
-    $sql = 'SELECT users.name, users.email , groups.name AS groupName FROM users JOIN groups ON users.group_id = groups.id';
-     
+
+      $sql = 'SELECT users.name, users.email FROM users WHERE name LIKE \'' . $search . '\'';
+      echo $sql;
+      
 
     // Initialisation de l'objet PDO, construction de la requête...
     foreach ($pdo->query( $sql,  PDO::FETCH_ASSOC) as $user) {
-        echo $user['name'].' '.$user['email'].' '.$user['groupName'].'<br>';
+        echo $user['name'].' '.$user['email'].'<br>';
     }
     // Ici, la variable $row est un tableau associatif
 
