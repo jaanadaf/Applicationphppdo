@@ -7,12 +7,15 @@ $password = '';
 
 try {
     // Création de l'objet PDO
-    $pdo = new PDO("mysql:host=localhost;dbname=phppdo;charset=utf8", "root", "");
+    $pdo = new PDO('mysql:host=localhost;dbname=phppdo', 'root', '');
 
+      // Requête SQL avec jointure
+    $sql = 'SELECT users.name, users.email , groups.name AS groupName FROM users JOIN groups ON users.group_id = groups.id';
+     
 
     // Initialisation de l'objet PDO, construction de la requête...
-    foreach ($pdo->query('SELECT name, email FROM users', PDO::FETCH_ASSOC) as $user) {
-        echo $user['name'].' '.$user['email'].'<br>';
+    foreach ($pdo->query( $sql,  PDO::FETCH_ASSOC) as $user) {
+        echo $user['name'].' '.$user['email'].' '.$user['groupName'].'<br>';
     }
     // Ici, la variable $row est un tableau associatif
 
