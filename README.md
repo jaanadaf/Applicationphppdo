@@ -765,7 +765,127 @@ Bien que cette différence soit minime dans l'exemple ci-dessus (seulement 4 uti
 Conclusion :
 Soyez prudent lorsque vous utilisez fetchAll. Posez-vous toujours la question : Ai-je vraiment besoin de récupérer toutes les données d'un coup ou puis-je traiter les résultats ligne par ligne ? Dans la majorité des cas, il est préférable d'utiliser une approche ligne par ligne pour optimiser la mémoire et éviter des problèmes côté serveur.
 
+==========================================================================
+SYSTEME DE PAGINATION POUR EVITER LA CONSOMMATION DE LA MEMOIRE
 
+Gestion de la Mémoire et Pagination
+L’utilisation de la mémoire RAM dans une application peut être impactée par la gestion des données. Outre la récupération des données, le HTML généré pour une page consomme également de la mémoire, que ce soit côté serveur ou côté client dans le navigateur de l’utilisateur. Plus il y a d’éléments dans ce HTML, plus la mémoire nécessaire pour les stocker est importante.
+
+Dans notre application actuelle, nous récupérons tous les utilisateurs dont l’email se termine par .com et les ajoutons au HTML. Avec seulement 4 utilisateurs, cela ne pose aucun problème. Cependant, si l’application devait gérer des milliers ou des millions d’utilisateurs, cela pourrait provoquer des problèmes de performance, voire des erreurs serveur par manque de mémoire.
+
+Pour éviter ces problèmes, nous devons limiter le nombre de résultats retournés et afficher un nombre contrôlable d’utilisateurs à la fois. Pour cela, nous allons implémenter un système de pagination. Par exemple :
+
+Page 1 : affiche les 10 premiers utilisateurs.
+Page 2 : affiche les 10 suivants, etc.
+Cela garantit un contrôle sur la quantité de données récupérées et affichées.
+
+Mise en Place de la Pagination
+Pour limiter les résultats, nous utiliserons la clause LIMIT en SQL. Cette clause accepte deux paramètres :
+
+OFFSET : le nombre de lignes à ignorer.
+LIMIT : le nombre de lignes à récupérer.
+Exemple de Requête SQL
+php
+Copier le code
+$offset = ($page - 1) * $usersPerPage; // Calcul du décalage
+$usersPerPage = 10; // Nombre d'utilisateurs par page
+
+$query = $pdo->prepare("
+    SELECT * FROM users
+    LIMIT :start, :limit
+");
+
+// Assignation des paramètres avec les types appropriés
+$query->bindValue(':start', $offset, PDO::PARAM_INT);
+$query->bindValue(':limit', $usersPerPage, PDO::PARAM_INT);
+
+$query->execute();
+$users = $query->fetchAll(PDO::FETCH_ASSOC);
+Explications Étape par Étape
+Calcul de l’OFFSET
+
+Pour déterminer le nombre d’utilisateurs à ignorer, nous multiplions le numéro de la page par le nombre d’utilisateurs par page, puis soustrayons 1.
+Récupération du numéro de la page
+
+Nous récupérons ce numéro à partir d’un paramètre d’URL, avec une valeur par défaut si le paramètre est absent. Exemple :
+php
+Copier le code
+$page = $_GET['page'] ?? 1;
+Assignation des Paramètres
+
+La méthode bindValue permet de spécifier le type des valeurs (PDO::PARAM_INT pour des nombres), ce qui évite les erreurs dues à des chaînes de caractères dans les clauses LIMIT.
+Exécution de la Requête et Bouclage sur les Résultats
+
+Les utilisateurs sont récupérés via fetchAll, et une boucle permet de générer le HTML nécessaire.
+Gestion des Types et Optimisation
+Lorsqu’on passe des paramètres dans une requête SQL, il est essentiel de spécifier le type des données. Dans le cas de la clause LIMIT, l’utilisation de chaînes de caractères pour des nombres entraînera une erreur.
+
+De plus, pour éviter ce genre de problème, il est recommandé d’utiliser bindValue plutôt qu’un tableau dans execute, car ce dernier traite tous les paramètres comme des chaînes.
+
+Exemple d’Affichage des Résultats
+php
+Copier le code
+foreach ($users as $user) {
+    echo "<p>Nom : {$user['name']} - Email : {$user['email']}</p>";
+}
+Conclusion et Test
+En implémentant la pagination, nous maîtrisons la quantité de données affichées. Le maximum d’utilisateurs affichés simultanément correspond au paramètre LIMIT. Pour tester l’application :
+
+Augmentez progressivement le nombre d’utilisateurs dans la base de données.
+Vérifiez la performance et la mémoire consommée.
+Ce système garantit une application évolutive et optimisée, même avec une base de données contenant un très grand nombre d’utilisateurs.
+==============================================================================================
+SYSTEME DE PAGINATION SUITE <?php
+
+// Paramètres de connexion
+$host = 'localhost';
+$dbname = 'phppdo';
+$username = 'root';
+$password = '';
+
+try {
+  require_once 'user.php';
+    // Création de l'objet PDO
+    $pdo = new PDO('mysql:host=localhost;dbname=phppdo', 'root', '');
+    $page = $_GET['page'] ?? 1;
+
+      $sql = 'SELECT users.name  FROM users LIMIT :start, 2';
+      $pdoStatement=$pdo->prepare($sql);
+      $pdoStatement->bindValue(':start', 2 * ($page - 1), PDO::PARAM_INT);
+      if($pdoStatement->execute()){
+
+        // Requete OK 
+
+       while($user = $pdoStatement->fetchObject('user')) {
+
+        echo $user->getDisplayedName();
+       /* echo '<pre>';
+        print_r($user);
+        echo '</pre>';*/
+
+        
+    }
+
+       
+      }else{
+        // Erreur
+        echo 'Une erreur est survenue';
+      }
+
+      /*echo $sql;
+    
+    // Initialisation de l'objet PDO, construction de la requête...
+    foreach ($pdo->query( $sql,  PDO::FETCH_ASSOC) as $user) {
+        echo $user['name'].' '.$user['email'].'<br>';
+    }*/
+    // Ici, la variable $row est un tableau associatif
+
+
+} catch (PDOException $e) {
+    echo 'Impossible de se connecter à la base de données';
+}
+
+ 
 
 
 
