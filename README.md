@@ -540,7 +540,230 @@ try {
 } catch (PDOException $e) {
     echo 'Erreur de connexion à la base de données : ' . $e->getMessage();
 }
+==========================================================================
+LA METHODE PDO::FETCH_NUM  FETCH_OBJ ET PDO::FETCH_CLASS
+ pour récupérer nos données sous forme de tableau associatif, nous utilisons le mode de récupération PDO::FETCH_ASSOC. Ce mode est très pratique, mais il existe d'autres alternatives intéressantes.
 
+Modes de récupération PDO
+Mode FETCH_ASSOC (tableau associatif)
+Ce mode retourne les données sous la forme d'un tableau associatif où les clés correspondent aux noms des colonnes.
+Exemple :
+
+php
+Copier le code
+while ($user = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    echo "Nom : " . $user['name'] . ", Email : " . $user['email'] . "<br>";
+}
+
+Resultat:
+Nom : John, Email : john@example.com
+Nom : Laura, Email : laura@example.com
+Nom : Robert, Email : robert@example.com
+Nom : D'artagnan, Email : dartagnan@example.com
+
+
+Mode FETCH_NUM (tableau indexé)
+Ce mode retourne les données sous forme de tableau indexé (les indices numériques correspondent à l'ordre des colonnes dans la requête).
+Exemple :
+
+
+while ($user = $stmt->fetch(PDO::FETCH_NUM)) {
+    print_r($user);
+
+    resultat:
+
+
+Mode FETCH_BOTH (associatif et indexé)
+Combine les deux modes précédents.
+
+Exemple :
+Array ( [0] => John [1] => john@example.com ) Array ( [0] => Laura [1] => laura@example.com ) Array ( [0] => Robert [1] => robert@example.com ) Array ( [0] => D'artagnan [1] => dartagnan@example.com )
+
+while ($user = $stmt->fetch(PDO::FETCH_BOTH)) {
+    echo "Nom : " . $user['name'] . " (indexé : " . $user[0] . "), Email : " . $user['email'] . "<br>";
+}
+
+while($user = $pdoStatement->fetch(PDO::FETCH_NUM)) {
+        echo '<pre>';
+        print_r($user);
+        echo '</pre>';
+
+resultat:
+
+Mode FETCH_OBJ (objets standards)
+Retourne les données sous forme d'objets standards PHP.
+Exemple :
+Array
+(
+    [0] => John
+    [1] => john@example.com
+)
+Array
+(
+    [0] => Laura
+    [1] => laura@example.com
+)
+Array
+(
+    [0] => Robert
+    [1] => robert@example.com
+)
+Array
+(
+    [0] => D'artagnan
+    [1] => dartagnan@example.com
+)
+
+
+while ($user = $stmt->fetch(PDO::FETCH_OBJ)) {
+    echo "Nom : " . $user->name . ", Email : " . $user->email . "<br>";
+}
+Mode FETCH_CLASS (instances d'une classe définie)
+Retourne les données sous forme d'instances d'une classe définie au préalable.
+
+RESULTAT:
+
+stdClass Object
+(
+    [name] => John
+    [email] => john@example.com
+)
+stdClass Object
+(
+    [name] => Laura
+    [email] => laura@example.com
+)
+stdClass Object
+(
+    [name] => Robert
+    [email] => robert@example.com
+)
+stdClass Object
+(
+    [name] => D'artagnan
+    [email] => dartagnan@example.com
+)
+
+Création de la classe :
+
+
+class User {
+    public $id;
+    public $name;
+    public $email;
+
+    public function getDisplayName() {
+        return $this->name . " (" . $this->email . ")";
+    }
+}
+Utilisation du mode FETCH_CLASS :
+
+
+$stmt->setFetchMode(PDO::FETCH_CLASS, 'User');
+while ($user = $stmt->fetch()) {
+    echo $user->getDisplayName() . "<br>";
+}
+Méthode fetchObject
+Simplifie l'utilisation du mode FETCH_CLASS.
+Exemple :
+
+
+while ($user = $stmt->fetchObject('User')) {
+    echo $user->getDisplayName() . "<br>";
+}
+
+resultat:
+
+John
+Laura
+Robert
+D'artagnan
+
+Différences pratiques entre les modes
+FETCH_ASSOC est idéal pour des traitements simples basés sur des noms de colonnes.
+FETCH_NUM est utile avec des marqueurs positionnels (? dans les requêtes préparées).
+FETCH_CLASS et fetchObject exploitent tout le potentiel de la programmation orientée objet en associant les résultats SQL aux structures de l'application.
+Exemple complet d'utilisation avec une classe
+Voici un exemple complet qui montre la récupération d'utilisateurs et leur affichage :
+
+
+try {
+    $pdo = new PDO('mysql:host=localhost;dbname=test', 'root', '');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $stmt = $pdo->prepare('SELECT id, name, email FROM users WHERE email LIKE :email');
+    $stmt->execute(['email' => '%@gmail.com']);
+
+    $stmt->setFetchMode(PDO::FETCH_CLASS, 'User');
+
+    while ($user = $stmt->fetch()) {
+        echo $user->getDisplayName() . "<br>";
+    }
+} catch (PDOException $e) {
+    echo "Erreur : " . $e->getMessage();
+}
+Ce code affiche les noms et emails des utilisateurs ayant une adresse se terminant par @gmail.com tout en utilisant une structure orientée objet via la classe User.
+=========================================================================
+LA METHODE FETCH ALL
+Tableau de résultats avec fetchAll
+
+Plutôt que de traiter les résultats ligne par ligne comme nous l'avons fait jusqu'à présent, il est possible d'utiliser une autre méthode de l'objet PDOStatement : la méthode fetchAll. Cette méthode retourne un tableau de résultats plutôt qu'une seule ligne à la fois.
+
+Pour l'utiliser, nous allons déclarer une variable $users qui recevra le retour de la méthode fetchAll. Tout comme pour la méthode fetch, il faut lui spécifier un mode de récupération. Si nous souhaitons récupérer des objets, nous devrons d'abord définir ce mode à l'aide de la méthode setFetchMode avec PDO::FETCH_CLASS et le nom de la classe User.
+
+Contrairement à fetch, il n'existe pas d'équivalent à fetchObject pour fetchAll. Voici un exemple de code :
+
+php
+Copier le code
+<?php
+// Configuration de la récupération en tant qu'objets de la classe User
+$stmt->setFetchMode(PDO::FETCH_CLASS, 'User');
+
+// Récupération des résultats sous forme de tableau
+$users = $stmt->fetchAll();
+
+// Parcourir les résultats
+foreach ($users as $user) {
+    echo $user->getDisplayName(); // Méthode affichant le nom et l'email formatés
+}
+?>
+En exécutant ce code, vous obtiendrez les mêmes résultats qu'avec fetchObject et une boucle foreach. Cependant, il existe une subtilité importante à connaître.
+
+Consommation mémoire :
+Lors de l'utilisation de fetch ou fetchObject, chaque ligne est récupérée une par une et utilise la même portion de mémoire. La première ligne est remplacée par la suivante, ce qui minimise la consommation mémoire.
+
+En revanche, avec fetchAll, toutes les lignes sont récupérées d'un coup et stockées dans un tableau en mémoire. Cela peut augmenter considérablement la consommation mémoire, en particulier lorsque vous manipulez un grand nombre de données.
+
+Pour illustrer cela, nous pouvons utiliser la fonction memory_get_peak_usage() pour mesurer la consommation de mémoire :
+
+php
+Copier le code
+<?php
+// Avec fetchAll
+$stmt->setFetchMode(PDO::FETCH_CLASS, 'User');
+$users = $stmt->fetchAll();
+echo "Mémoire utilisée avec fetchAll : " . memory_get_peak_usage() . " octets\n";
+
+// Avec fetch ligne par ligne
+$stmt->execute(); // Réexécuter la requête si nécessaire
+while ($user = $stmt->fetchObject('User')) {
+    echo $user->getDisplayName();
+}
+echo "Mémoire utilisée avec fetch ligne par ligne : " . memory_get_peak_usage() . " octets\n";
+?>
+Différences observées :
+Avec fetchAll, la mémoire utilisée est généralement plus élevée, car toutes les données sont stockées dans un tableau.
+Avec une récupération ligne par ligne (fetch ou fetchObject), la mémoire consommée reste constante, quelle que soit la quantité de données.
+Exemple de résultat :
+
+plaintext
+Copier le code
+Mémoire utilisée avec fetchAll : 463208 octets
+Mémoire utilisée avec fetch ligne par ligne : 462000 octets
+Bien que cette différence soit minime dans l'exemple ci-dessus (seulement 4 utilisateurs), elle peut devenir significative lorsque vous travaillez avec des centaines ou des milliers de lignes. Dans des cas extrêmes, cela pourrait même entraîner des erreurs côté serveur si la mémoire RAM est insuffisante.
+
+Conclusion :
+Soyez prudent lorsque vous utilisez fetchAll. Posez-vous toujours la question : Ai-je vraiment besoin de récupérer toutes les données d'un coup ou puis-je traiter les résultats ligne par ligne ? Dans la majorité des cas, il est préférable d'utiliser une approche ligne par ligne pour optimiser la mémoire et éviter des problèmes côté serveur.
 
 
 

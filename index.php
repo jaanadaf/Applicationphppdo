@@ -7,6 +7,7 @@ $username = 'root';
 $password = '';
 
 try {
+  require_once 'user.php';
     // Création de l'objet PDO
     $pdo = new PDO('mysql:host=localhost;dbname=phppdo', 'root', '');
 
@@ -20,13 +21,19 @@ try {
       $sql = 'SELECT users.name, users.email FROM users WHERE email LIKE :search';
       $pdoStatement=$pdo->prepare($sql);
       $pdoStatement->bindValue(':search', $search, PDO::PARAM_STR);
+      $pdoStatement->setFetchMode(PDO::FETCH_CLASS, 'user' );
       if($pdoStatement->execute()){
 
         // Requete OK 
 
-       while($user = $pdoStatement->fetch(PDO::FETCH_ASSOC)) {
+       while($user = $pdoStatement->fetch()) {
 
-        echo $user['name'].' '.$user['email'].'<br>';
+        echo $user->getDisplayedName();
+       /* echo '<pre>';
+        print_r($user);
+        echo '</pre>';*/
+
+        
     }
 
        
